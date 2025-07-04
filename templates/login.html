@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - LIGHTPLUG</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <!-- Add favicon -->
+    <link rel="icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
+</head>
+<body class="auth-page">
+    <div class="auth-box">
+        <img src="{{ url_for('static', filename='images/logo.jpg') }}" 
+             alt="LIGHTPLUG" 
+             class="auth-logo"
+             width="150" height="auto">
+        
+        <h2 class="auth-heading">Welcome Back</h2>
+        
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="flash-message flash-{{ category }}">
+                        {{ message }}
+                        <span class="close-flash">&times;</span>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        
+        <form class="auth-form" method="POST" action="{{ url_for('login') }}" autocomplete="on">
+            <div class="form-group">
+                <input type="email" 
+                       name="email" 
+                       placeholder="Email Address" 
+                       required
+                       autocomplete="email"
+                       autocapitalize="off">
+            </div>
+            
+            <div class="form-group password-container">
+                <input type="password" 
+                       name="password" 
+                       placeholder="Password" 
+                       required
+                       autocomplete="current-password"
+                       id="passwordField">
+                <span class="toggle-password" onclick="togglePassword()">👁️</span>
+            </div>
+            
+            <div class="form-options">
+                <label class="remember-me">
+                    <input type="checkbox" name="remember"> Remember me
+                </label>
+                <a href="{{ url_for('forgot_password') }}" class="forgot-password">Forgot password?</a>
+            </div>
+            
+            <button type="submit" class="auth-btn" id="loginBtn">
+                Login
+            </button>
+        </form>
+        
+        <div class="auth-links">
+            <p>New user? <a href="{{ url_for('register') }}">Create account</a></p>
+            <p class="auth-divider">or</p>
+            <button class="social-login google-btn">
+                <img src="{{ url_for('static', filename='images/google-icon.png') }}" alt="Google">
+                Continue with Google
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Toggle password visibility
+        function togglePassword() {
+            const passwordField = document.getElementById('passwordField');
+            const type = passwordField.getAttribute('type') === 'password' ? 'text' : 'password';
+            passwordField.setAttribute('type', type);
+        }
+
+        // Close flash messages
+        document.querySelectorAll('.close-flash').forEach(button => {
+            button.addEventListener('click', (e) => {
+                e.target.parentElement.style.display = 'none';
+            });
+        });
+
+        // Disable button after click to prevent double submission
+        document.getElementById('loginBtn').addEventListener('click', function() {
+            this.disabled = true;
+            this.form.submit();
+        });
+    </script>
+</body>
+</html>

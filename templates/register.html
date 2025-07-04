@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register - LIGHTPLUG</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="auth-page">
+    <div class="auth-box">
+        <img src="{{ url_for('static', filename='images/logo.jpg') }}" 
+             alt="LIGHTPLUG" 
+             class="auth-logo">
+        
+        <h2 class="auth-heading">Create Account</h2>
+        
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="flash-message flash-{{ category }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        
+       <form class="auth-form" method="POST" action="{{ url_for('register') }}">
+    <input type="text" 
+           name="fullname" 
+           placeholder="Full Name" 
+           required>
+           
+    <input type="email" 
+           name="email" 
+           placeholder="Email Address" 
+           required>
+    
+    <input type="tel" 
+           name="phone" 
+           placeholder="Phone Number" 
+           required>
+    
+    <input type="password" 
+           name="password" 
+           placeholder="Password (min 6 characters)" 
+           minlength="6"
+           required>
+           
+    <input type="password" 
+           name="confirm_password" 
+           placeholder="Confirm Password" 
+           required>
+
+    <div class="pin-fields">
+        <input type="password" 
+               name="pin" 
+               placeholder="4-Digit PIN" 
+               inputmode="numeric"
+               pattern="\d{4}"
+               maxlength="4"
+               title="Please enter exactly 4 digits"
+               required>
+               
+        <input type="password" 
+               name="confirm_pin" 
+               placeholder="Confirm PIN" 
+               inputmode="numeric"
+               pattern="\d{4}"
+               maxlength="4"
+               required>
+    </div>
+    
+    <button type="submit" class="auth-btn">
+        Register
+    </button>
+</form>
+
+<div class="auth-links">
+            <p>Already have an account? <a href="{{ url_for('login') }}">Login here</a></p>
+        </div>
+    </div>
+</body>
+</html>

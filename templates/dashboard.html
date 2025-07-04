@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - LIGHTPLUG</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <header class="dashboard-header">
+        <div class="header-left">
+            <button class="menu-btn" id="menu-toggle-btn"><i class="fas fa-bars"></i></button> {# Added ID #}
+        </div>
+        <div class="header-center">
+            <img src="{{ url_for('static', filename='images/logo.jpg') }}" alt="LIGHTPLUG" class="logo">
+        </div>
+        <div class="header-right">
+            <label class="theme-switch" for="theme-toggle">
+                <input type="checkbox" id="theme-toggle">
+                <div class="slider round"></div>
+            </label>
+            <button class="notif-btn"><i class="fas fa-bell"></i></button>
+        </div>
+    </header>
+
+    <!-- START OF SIDEBAR MENU -->
+    <div class="sidebar-menu" id="sidebar-menu">
+        <div class="sidebar-header">
+            <img src="{{ url_for('static', filename='images/logo.jpg') }}" alt="LIGHTPLUG" class="sidebar-logo">
+            <button class="close-sidebar-btn">&times;</button>
+        </div>
+        <ul class="sidebar-nav">
+            <li><a href="{{ url_for('dashboard') }}"><i class="fas fa-home"></i> Home</a></li>
+            <li><a href="{{ url_for('profile') }}"><i class="fas fa-user"></i> Profile</a></li>
+            <li><a href="{{ url_for('setup_pin') }}"><i class="fas fa-key"></i> Set/Change PIN</a></li>
+            <li><a href="{{ url_for('logout') }}"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+        </ul>
+    </div>
+    <div class="overlay" id="sidebar-overlay"></div>
+    <!-- END OF SIDEBAR MENU -->
+
+    <main class="dashboard-main">
+        <section class="balance-section">
+            <div class="balance-card">
+                <p>Available Balance</p>
+                <h2>₦{{ "%.2f"|format(balance) }}</h2>
+            </div>
+        </section>
+
+        <div class="action-container">
+            <a href="{{ url_for('deposit') }}" class="action-item deposit">
+                <div class="action-icon deposit"><i class="fas fa-money-bill-wave"></i></div>
+                <p>Deposit</p>
+            </a>
+            <a href="{{ url_for('transfer') }}" class="action-item transfer">
+                <div class="action-icon transfer"><i class="fas fa-exchange-alt"></i></div>
+                <p>W2W</p>
+            </a>
+            <a href="{{ url_for('withdraw') }}" class="action-item withdraw">
+                <div class="action-icon withdraw"><i class="fas fa-wallet"></i></div>
+                <p>Withdraw</p>
+            </a>
+        </div>
+
+        <section id="our-services" class="services-section">
+            <h3 class="section-title">Our Services</h3>
+            <div class="services-grid">
+                <a href="{{ url_for('buy_airtime') }}" class="service-card">
+                    <div class="service-icon airtime"><i class="fas fa-phone"></i></div>
+                    <p>Airtime Topup</p>
+                </a>
+                <a href="{{ url_for('buy_data') }}" class="service-card">
+                    <div class="service-icon data"><i class="fas fa-database"></i></div>
+                    <p>Mobile Data</p>
+                </a>
+                <a href="{{ url_for('tv_payment') }}" class="service-card">
+                    <div class="service-icon tv"><i class="fas fa-tv"></i></div>
+                    <p>TV Payment</p>
+                </a>
+                <a href="{{ url_for('electricity_bills') }}" class="service-card">
+                    <div class="service-icon electricity"><i class="fas fa-bolt"></i></div>
+                    <p>Electricity Bills</p>
+                </a>
+                <a href="{{ url_for('education_pins') }}" class="service-card">
+                    <div class="service-icon edu"><i class="fas fa-graduation-cap"></i></div>
+                    <p>Education Pins</p>
+                </a>
+            </div>
+        </section>
+           <section class="transactions-section">
+        <div class="transactions-header">
+            <h3 class="section-title">Recent Transactions</h3>
+            <a href="#" class="view-all">View All</a>
+        </div>
+        <div class="transactions-list">
+            {% if transactions %}
+                {% for tx in transactions[-4:] | reverse %} {# Display most recent at top #}
+                <div class="transaction-item">
+                    <div class="tx-icon">
+                        {# Use a more generic icon or specific ones based on service #}
+                        {% if tx.amount > 0 %} {# Assuming positive amount means credit/deposit #}
+                            <i class="fas fa-arrow-down"></i>
+                        {% else %} {# Negative amount means debit/withdrawal #}
+                            <i class="fas fa-arrow-up"></i>
+                        {% endif %}
+                    </div>
+                    <div class="tx-details">
+                        <p class="tx-type">{{ tx.service }}</p> {# <-- THIS LINE IS CRUCIAL: Changed from tx.type to tx.service #}
+                        <p class="tx-date">{{ tx.timestamp }}</p> {# <-- THIS LINE IS CRUCIAL: Changed from tx.date to tx.timestamp #}
+                    </div>
+                    <div class="tx-amount {{ 'credit' if tx.amount > 0 else 'debit' }}">
+                        {{ '₦' + "%.2f"|format(tx.amount|abs) }} {# Show absolute value, apply sign via color #}
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <p class="no-tx">No recent transactions</p>
+            {% endif %}
+        </div>
+    </section>
+
+    </main>
+
+    <nav class="bottom-nav">
+        <a href="#" class="nav-item active">
+            <i class="fas fa-home"></i>
+            <span>Home</span>
+        </a>
+        <a href="#our-services" class="nav-item">
+            <i class="fas fa-th-large"></i>
+            <span>Services</span>
+        </a>
+    
+        <a href="{{ url_for('deposit') }}" class="nav-item fund-wallet">
+            <i class="fas fa-plus"></i>
+            <span>Fund Wallet</span>
+        </a>
+        <a href="#" class="nav-item" id="chat-btn">
+            <i class="fas fa-comment-dots"></i>
+            <span>Chat</span>
+        </a>
+        <a href="{{ url_for('profile') }}" class="nav-item">
+            <i class="fas fa-user"></i>
+            <span>Profile</span>
+        </a>
+    </nav>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const themeToggle = document.getElementById('theme-toggle');
+            const html = document.querySelector('html');
+
+            // Check for saved theme preference
+            const currentTheme = localStorage.getItem('theme');
+            if (currentTheme) {
+                html.setAttribute('data-theme', currentTheme);
+                if (currentTheme === 'dark') {
+                    themeToggle.checked = true;
+                }
+            }
+
+            themeToggle.addEventListener('change', () => {
+                if (themeToggle.checked) {
+                    html.setAttribute('data-theme', 'dark');
+                    localStorage.setItem('theme', 'dark');
+                } else {
+                    html.setAttribute('data-theme', 'light');
+                    localStorage.setItem('theme', 'light');
+                }
+            });
+        });
+    </script>
+    <script>
+        // Notification System
+        document.addEventListener('DOMContentLoaded', function() {
+            const notifBtn = document.querySelector('.notif-btn');
+            
+            // Create dropdown element
+            const dropdown = document.createElement('div');
+            dropdown.className = 'notif-dropdown';
+            dropdown.style.display = 'none';
+            notifBtn.parentElement.appendChild(dropdown);
+
+            // Load notifications
+            function loadNotifications() {
+                fetch('/notifications')
+                    .then(res => res.json())
+                    .then(data => {
+                        // Update badge
+                        const badge = document.createElement('span');
+                        badge.className = 'notif-badge';
+                        badge.textContent = data.count > 0 ? data.count : '';
+                        notifBtn.innerHTML = '<i class="fas fa-bell"></i>'; // Reset icon to remove old badge
+                        if (data.count > 0) {
+                            notifBtn.appendChild(badge);
+                        }
+                        
+                        // Update dropdown content
+                        dropdown.innerHTML = `
+                            <div class="notif-header">
+                                <h4>Notifications</h4>
+                                <button class="clear-btn">Clear All</button>
+                            </div>
+                            ${data.notifications.map(n => `
+                                <div class="notif-item ${n.read ? '' : 'unread'}">
+                                    <p>${n.message}</p>
+                                    <small>${n.time}</small>
+                                </div>
+                            `).join('') || '<p style="text-align: center; color: var(--text-secondary);">No notifications</p>'}
+                        `;
+                        // Re-attach event listener for clear button if it exists
+                        const clearButton = dropdown.querySelector('.clear-btn');
+                        if (clearButton) {
+                            clearButton.addEventListener('click', (e) => {
+                                e.stopPropagation(); // Prevent dropdown from closing immediately
+                                fetch('/notifications/clear', { method: 'POST' })
+                                    .then(() => loadNotifications()); // Reload notifications after clearing
+                            });
+                        }
+                    })
+                    .catch(error => console.error('Error loading notifications:', error));
+            }
+
+            // Toggle dropdown
+            notifBtn.addEventListener('click', (e) => {
+                e.stopPropagation(); // Prevent document click from closing it immediately
+                dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
+                if (dropdown.style.display === 'block') loadNotifications();
+            });
+
+            // Close when clicking outside
+            document.addEventListener('click', (event) => {
+                if (!dropdown.contains(event.target) && event.target !== notifBtn && !notifBtn.contains(event.target)) {
+                    dropdown.style.display = 'none';
+                }
+            });
+
+            // Initial load
+            loadNotifications();
+        });
+    </script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const servicesLink = document.querySelector('a[href="#our-services"]');
+            const servicesSection = document.getElementById('our-services');
+            
+            // Highlight on click
+            servicesLink.addEventListener('click', function(e) {
+                e.preventDefault(); // Prevent default hash link behavior
+                // Scroll to section
+                servicesSection.scrollIntoView({ behavior: 'smooth' });
+
+                // Remove active class from all nav items
+                document.querySelectorAll('.bottom-nav .nav-item').forEach(item => {
+                    item.classList.remove('active');
+                });
+                // Add to clicked item
+                this.classList.add('active');
+            });
+            
+            // Optional: Highlight when scrolling to section
+            window.addEventListener('scroll', function() {
+                const rect = servicesSection.getBoundingClientRect();
+                // Check if the section is mostly in view
+                if (rect.top <= window.innerHeight / 2 && rect.bottom >= window.innerHeight / 2) {
+                    document.querySelectorAll('.bottom-nav .nav-item').forEach(item => {
+                        item.classList.remove('active');
+                    });
+                    servicesLink.classList.add('active');
+                } else if (window.scrollY < servicesSection.offsetTop - window.innerHeight / 2 &&
+                           document.querySelector('.bottom-nav .nav-item:first-child')) {
+                    // If scrolled above services, activate home
+                    document.querySelectorAll('.bottom-nav .nav-item').forEach(item => {
+                        item.classList.remove('active');
+                    });
+                    document.querySelector('.bottom-nav .nav-item:first-child').classList.add('active');
+                }
+            });
+
+            // Set initial active state for Home on page load
+            const initialPath = window.location.hash;
+            if (initialPath === '#our-services') {
+                servicesLink.classList.add('active');
+                document.querySelector('.bottom-nav .nav-item:first-child').classList.remove('active');
+            } else {
+                document.querySelector('.bottom-nav .nav-item:first-child').classList.add('active');
+            }
+        });
+    </script>
+    <!-- Chat Options Modal -->
+    <div id="chat-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h3>Choose Chat Option</h3>
+            <div class="chat-options">
+                <button id="whatsapp-chat" class="chat-option-btn">
+                    <i class="fab fa-whatsapp"></i> WhatsApp
+                </button>
+                <button id="web-chat" class="chat-option-btn">
+                    <i class="fas fa-globe"></i> Chat Us
+                </button>
+            </div>
+        </div>
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Get elements
+            const chatBtn = document.getElementById('chat-btn');
+            const modal = document.getElementById('chat-modal');
+            const closeBtn = document.querySelector('#chat-modal .close-modal'); // Specific selector
+            const whatsappBtn = document.getElementById('whatsapp-chat');
+            const webChatBtn = document.getElementById('web-chat');
+            
+            // Open modal when chat button is clicked
+            if (chatBtn) {
+                chatBtn.addEventListener('click', function() {
+                    modal.style.display = 'block';
+                });
+            }
+            
+            // Close modal when X is clicked
+            if (closeBtn) {
+                closeBtn.addEventListener('click', function() {
+                    modal.style.display = 'none';
+                });
+            }
+            
+            // Close modal when clicking outside
+            window.addEventListener('click', function(event) {
+                if (event.target === modal) {
+                    modal.style.display = 'none';
+                }
+            });
+            
+            // WhatsApp chat
+            if (whatsappBtn) {
+                whatsappBtn.addEventListener('click', function() {
+                    // Replace with your WhatsApp number (include country code, remove +)
+                    const phoneNumber = '2349161130663'; 
+                    const message = 'Hello%20LIGHTPLUG,%20I%20need%20assistance';
+                    window.open(`https://wa.me/${phoneNumber}?text=${message}`, '_blank');
+                    modal.style.display = 'none';
+                });
+            }
+            
+            // Web chat (you'll implement this later)
+            if (webChatBtn) {
+                webChatBtn.addEventListener('click', function() {
+                    // Create chat container if it doesn't exist
+                    if (!document.getElementById('web-chat-container')) {
+                        const chatHTML = `
+                        <div id="web-chat-container" class="web-chat">
+                            <div class="chat-header">
+                                <h3>Live Support</h3>
+                                <span class="close-chat">&times;</span>
+                            </div>
+                            <div class="chat-messages" id="chat-messages">
+                                <div class="message bot">
+                                    <p>Hello! How can we help you today?</p>
+                                </div>
+                            </div>
+                            <div class="chat-input">
+                                <input type="text" id="chat-input" placeholder="Type your message...">
+                                <button id="send-btn"><i class="fas fa-paper-plane"></i></button>
+                            </div>
+                        </div>
+                        `;
+                        document.body.insertAdjacentHTML('beforeend', chatHTML);
+                        
+                        // Close chat functionality
+                        document.querySelector('.close-chat').addEventListener('click', function() {
+                            document.getElementById('web-chat-container').remove();
+                        });
+                        
+                        // Send message functionality
+                        document.getElementById('send-btn').addEventListener('click', sendMessage);
+                        document.getElementById('chat-input').addEventListener('keypress', function(e) {
+                            if (e.key === 'Enter') sendMessage();
+                        });
+                    }
+                    modal.style.display = 'none';
+                });
+            }
+
+            function sendMessage() {
+                const input = document.getElementById('chat-input');
+                const message = input.value.trim();
+                
+                if (message) {
+                    // Add user message
+                    const userMsg = document.createElement('div');
+                    userMsg.className = 'message user';
+                    userMsg.innerHTML = `<p>${message}</p>`;
+                    document.getElementById('chat-messages').appendChild(userMsg);
+                    
+                    // Clear input
+                    input.value = '';
+                    
+                    // Simulate bot response after 1 second
+                    setTimeout(() => {
+                        const botMsg = document.createElement('div');
+                        botMsg.className = 'message bot';
+                        botMsg.innerHTML = '<p>Thanks for your message! Our team will respond shortly.</p>';
+                        document.getElementById('chat-messages').appendChild(botMsg);
+                        
+                        // Scroll to bottom
+                        const chatMessages = document.getElementById('chat-messages');
+                        chatMessages.scrollTop = chatMessages.scrollHeight;
+                    }, 1000);
+                    
+                    // Scroll to bottom
+                    const chatMessages = document.getElementById('chat-messages');
+                    chatMessages.scrollTop = chatMessages.scrollHeight;
+                }
+            }
+        });
+    </script>
+    <!-- START OF SIDEBAR MENU JAVASCRIPT -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const menuToggleBtn = document.getElementById('menu-toggle-btn');
+            const sidebarMenu = document.getElementById('sidebar-menu');
+            const closeSidebarBtn = document.querySelector('.close-sidebar-btn');
+            const sidebarOverlay = document.getElementById('sidebar-overlay');
+
+            function openSidebar() {
+                sidebarMenu.classList.add('active');
+                sidebarOverlay.classList.add('active');
+                document.body.style.overflow = 'hidden'; // Prevent scrolling body when sidebar is open
+            }
+
+            function closeSidebar() {
+                sidebarMenu.classList.remove('active');
+                sidebarOverlay.classList.remove('active');
+                document.body.style.overflow = ''; // Restore body scrolling
+            }
+
+            if (menuToggleBtn) {
+                menuToggleBtn.addEventListener('click', openSidebar);
+            }
+            if (closeSidebarBtn) {
+                closeSidebarBtn.addEventListener('click', closeSidebar);
+            }
+            if (sidebarOverlay) {
+                sidebarOverlay.addEventListener('click', closeSidebar); // Close when clicking overlay
+            }
+        });
+    </script>
+    <!-- END OF SIDEBAR MENU JAVASCRIPT -->
+</body>
+</html>

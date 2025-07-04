@@ -1,0 +1,503 @@
+/* General Service Page Layout */
+.service-main {
+    max-width: 580px;
+    margin: 40px auto;
+    padding: 40px;
+    background-color: var(--card-background);
+    border-radius: 24px;
+    box-shadow: var(--shadow-medium);
+    transition: all 0.4s ease;
+    font-family: 'Inter', sans-serif;
+    animation: fadeIn 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.service-main::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(var(--primary-rgb), 0.05) 0%, transparent 70%);
+    opacity: 0;
+    transition: opacity 0.6s ease;
+    pointer-events: none;
+}
+
+.service-main:hover::before {
+    opacity: 1;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px) scale(0.98); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.service-title {
+    font-size: 2.2rem;
+    color: var(--text-color);
+    text-align: center;
+    margin-bottom: 40px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    position: relative;
+    padding-bottom: 15px;
+}
+
+.service-title::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 80px;
+    height: 4px;
+    background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
+    border-radius: 2px;
+    animation: titleUnderline 1.5s ease-in-out infinite alternate;
+}
+
+@keyframes titleUnderline {
+    0% { width: 80px; opacity: 0.8; }
+    100% { width: 120px; opacity: 1; }
+}
+
+/* Form Styling */
+.service-form {
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    animation: formGroupAppear 0.6s ease-out forwards;
+    opacity: 0;
+    transform: translateY(10px);
+}
+
+@keyframes formGroupAppear {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Stagger animations for form groups */
+.form-group:nth-child(1) { animation-delay: 0.2s; }
+.form-group:nth-child(2) { animation-delay: 0.3s; }
+.form-group:nth-child(3) { animation-delay: 0.4s; }
+.form-group:nth-child(4) { animation-delay: 0.5s; }
+
+.form-group label {
+    font-size: 0.95rem;
+    color: var(--text-color-light);
+    margin-bottom: 10px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+}
+
+.form-group label svg {
+    margin-right: 8px;
+    width: 18px;
+    height: 18px;
+    fill: var(--text-color-light);
+    transition: fill 0.3s ease;
+}
+
+.service-form input[type="tel"],
+.service-form input[type="number"],
+.service-form input[type="text"],
+.service-form select {
+    padding: 16px 20px;
+    border: 2px solid var(--border-color);
+    border-radius: 14px;
+    font-size: 1.05rem;
+    color: var(--text-color);
+    background-color: var(--input-background);
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    width: 100%;
+    box-sizing: border-box;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+}
+
+/* Custom arrow for select */
+.form-group select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23666'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 18px center;
+    background-size: 22px;
+    padding-right: 45px;
+}
+
+.service-form input:focus,
+.service-form select:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 5px rgba(var(--primary-rgb), 0.2);
+    outline: none;
+    background-color: var(--input-background-focused);
+    transform: translateY(-2px);
+}
+
+/* Floating label effect */
+.form-group.focused label {
+    color: var(--primary-color);
+    transform: translateY(-5px);
+}
+
+.form-group.focused label svg {
+    fill: var(--primary-color);
+}
+
+/* Price Display for Data and Education Pins */
+.price-display,
+.total-price-display {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 18px 0;
+    border-top: 1px dashed var(--border-color-light);
+    margin-top: 20px;
+    font-size: 1.1rem;
+    position: relative;
+}
+
+.price-display::before,
+.total-price-display::before {
+    content: '';
+    position: absolute;
+    top: -1px;
+    left: 0;
+    width: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
+    transition: width 1s ease;
+}
+
+.price-display.animate::before,
+.total-price-display.animate::before {
+    width: 100%;
+}
+
+.price-display label,
+.total-price-display label {
+    font-weight: 700;
+    color: var(--text-color);
+    margin-bottom: 0;
+}
+
+.price-display span,
+.total-price-display span {
+    font-size: 1.3rem;
+    font-weight: 900;
+    color: var(--accent-color);
+    position: relative;
+}
+
+.price-display span::after,
+.total-price-display span::after {
+    content: '';
+    position: absolute;
+    bottom: -3px;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background: currentColor;
+    transform: scaleX(0);
+    transform-origin: right;
+    transition: transform 0.5s ease;
+}
+
+.price-display.animate span::after,
+.total-price-display.animate span::after {
+    transform: scaleX(1);
+    transform-origin: left;
+}
+
+/* Submit Button */
+.submit-btn {
+    background: rgb(2, 17, 44);
+    color: #fff;
+    padding: 18px 28px;
+    border: none;
+    border-radius: 14px;
+    font-size: 1.2rem;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 10px 25px rgba(var(--primary-rgb), 0.4);
+    transition: all 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+    margin-top: 35px;
+    position: relative;
+    overflow: hidden;
+    letter-spacing: 0.5px;
+    z-index: 1;
+}
+
+.submit-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, var(--accent-color) 0%, var(--primary-color) 100%);
+    opacity: 0;
+    transition: opacity 0.4s ease;
+    z-index: -1;
+}
+
+.submit-btn:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 15px 30px rgba(var(--primary-rgb), 0.5);
+}
+
+.submit-btn:hover::before {
+    opacity: 1;
+}
+
+.submit-btn:active {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(var(--primary-rgb), 0.3);
+}
+
+.submit-btn .btn-icon {
+    margin-left: 8px;
+    transition: transform 0.3s ease;
+}
+
+.submit-btn:hover .btn-icon {
+    transform: translateX(5px);
+}
+
+/* Network Logo Display for buy_data.html */
+.network-logo-container {
+    text-align: center;
+    margin: 25px 0;
+    min-height: 100px;
+    position: relative;
+}
+
+.network-logo-container::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: rgba(var(--primary-rgb), 0.1);
+    filter: blur(10px);
+    opacity: 0;
+    transition: opacity 0.5s ease;
+}
+
+.network-logo-container.active::before {
+    opacity: 1;
+}
+
+.network-logo-container img {
+    max-width: 80px;
+    height: auto;
+    border-radius: 12px;
+    box-shadow: 0 6px 15px rgba(0,0,0,0.15);
+    transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transform: scale(0.7) rotate(-10deg);
+    opacity: 0;
+    position: relative;
+    z-index: 1;
+}
+
+.network-logo-container img.show {
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
+}
+
+/* Confirmation Animation */
+.confirmation-animation {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 120px;
+    margin: 30px 0;
+}
+
+.checkmark {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    display: block;
+    stroke-width: 5;
+    stroke: var(--accent-color);
+    stroke-miterlimit: 10;
+    margin: 0 auto;
+    box-shadow: inset 0 0 0 rgba(var(--accent-rgb), 0.4);
+    animation: fill 0.6s ease-in-out 0.6s forwards, scale 0.5s ease-in-out 0.9s both;
+}
+
+.checkmark__circle {
+    stroke-dasharray: 166;
+    stroke-dashoffset: 166;
+    stroke-width: 5;
+    stroke-miterlimit: 10;
+    stroke: var(--accent-color);
+    fill: none;
+    animation: stroke 0.6s cubic-bezier(0.65, 0, 0.45, 1) forwards;
+}
+
+.checkmark__check {
+    transform-origin: 50% 50%;
+    stroke-dasharray: 48;
+    stroke-dashoffset: 48;
+    animation: stroke 0.3s cubic-bezier(0.65, 0, 0.45, 1) 0.6s forwards;
+}
+
+@keyframes stroke {
+    100% { stroke-dashoffset: 0; }
+}
+
+@keyframes scale {
+    0%, 100% { transform: none; }
+    50% { transform: scale3d(1.1, 1.1, 1); }
+}
+
+@keyframes fill {
+    100% { box-shadow: inset 0 0 0 40px rgba(var(--accent-rgb), 0.1); }
+}
+
+/* Decorative Elements */
+.service-decoration {
+    position: absolute;
+    pointer-events: none;
+    z-index: -1;
+}
+
+.decoration-circle {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(var(--primary-rgb), 0.1) 0%, transparent 70%);
+    position: absolute;
+    animation: float 8s ease-in-out infinite;
+}
+
+.decoration-circle:nth-child(1) {
+    top: -50px;
+    left: -50px;
+    animation-delay: 0s;
+}
+
+.decoration-circle:nth-child(2) {
+    bottom: -30px;
+    right: -40px;
+    animation-delay: 1s;
+}
+
+@keyframes float {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    50% { transform: translateY(-20px) rotate(5deg); }
+}
+
+/* Dark Theme Adjustments */
+html[data-theme="dark"] .service-main {
+    background-color: var(--dark-card-background);
+    box-shadow: var(--dark-shadow-medium);
+}
+
+html[data-theme="dark"] .service-title,
+html[data-theme="dark"] .form-group label {
+    color: var(--dark-text-color);
+}
+
+html[data-theme="dark"] .service-form input,
+html[data-theme="dark"] .service-form select {
+    background-color: var(--dark-input-background);
+    border-color: var(--dark-border-color);
+    color: var(--dark-text-color);
+}
+
+html[data-theme="dark"] .service-form input::placeholder {
+    color: rgba(255, 255, 255, 0.5);
+}
+
+html[data-theme="dark"] .service-form select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23aaa'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+}
+
+html[data-theme="dark"] .service-form input:focus,
+html[data-theme="dark"] .service-form select:focus {
+    border-color: var(--dark-primary-color);
+    box-shadow: 0 0 0 5px rgba(var(--dark-primary-rgb), 0.2);
+    background-color: var(--dark-input-background-focused);
+}
+
+html[data-theme="dark"] .price-display label,
+html[data-theme="dark"] .total-price-display label {
+    color: var(--dark-text-color);
+}
+
+html[data-theme="dark"] .price-display span,
+html[data-theme="dark"] .total-price-display span {
+    color: var(--dark-accent-color);
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+    .service-main {
+        margin: 20px;
+        padding: 25px;
+        border-radius: 20px;
+    }
+    
+    .service-title {
+        font-size: 1.8rem;
+        margin-bottom: 30px;
+    }
+    
+    .service-title::after {
+        width: 60px;
+    }
+    
+    .service-form {
+        gap: 25px;
+    }
+    
+    .submit-btn {
+        padding: 16px 22px;
+        font-size: 1.1rem;
+    }
+    
+    .network-logo-container {
+        min-height: 90px;
+    }
+    
+    .network-logo-container img {
+        max-width: 70px;
+    }
+}
+
+@media (max-width: 480px) {
+    .service-main {
+        margin: 15px;
+        padding: 20px;
+    }
+    
+    .service-title {
+        font-size: 1.6rem;
+    }
+    
+    .service-form input[type="tel"],
+    .service-form input[type="number"],
+    .service-form input[type="text"],
+    .service-form select {
+        padding: 14px 16px;
+    }
+}

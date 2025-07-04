@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LIGHTPLUG ⚡ | Instant VTU Services</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <div class="container">
+            <div class="logo-brand">
+                <a href="/">
+                    <img src="{{ url_for('static', filename='images/logo.jpg') }}" alt="LIGHTPLUG" class="logo-img">
+                    <span class="brand-name">LIGHTPLUG</span>
+                </a>
+            </div>
+            
+            <div class="nav-menu">
+                <ul>
+                    <li><a href="#about">About</a></li>
+                    <li><a href="#services">Services</a></li>
+                    <li><a href="/contact">Contact</a></li>
+                    <li class="auth-btn"><a href="/login" class="btn-login">Login</a></li>
+                    <li class="auth-btn"><a href="/register" class="btn-register">Register</a></li>
+                </ul>
+            </div>
+            
+            <!-- Mobile Menu Button -->
+            <div class="mobile-menu-btn">
+                <i class="fas fa-bars"></i>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="container">
+            <div class="hero-content">
+                <h1>Power Up Your Mobile Instantly</h1>
+                <p>Buy airtime, data bundles, and pay bills in seconds with LIGHTPLUG</p>
+                <div class="cta-buttons">
+                    <a href="/buy-airtime" class="btn-primary">
+                        <i class="fas fa-bolt"></i> Buy Airtime
+                    </a>
+                    <a href="/buy-data" class="btn-secondary">
+                        <i class="fas fa-database"></i> Data Bundles
+                    </a>
+                </div>
+            </div>
+            <div class="hero-image">
+              
+            </div>
+        </div>
+    </section>
+
+    <!-- Services Section -->
+    <section class="services" id="services">
+        <div class="container">
+            <h2>Our Services</h2>
+            <div class="services-grid">
+                <div class="service-card">
+                    <div class="service-icon">
+                        <i class="fas fa-mobile-alt"></i>
+                    </div>
+                    <h3>Airtime Top-up</h3>
+                    <p>Instant recharge for all networks</p>
+                </div>
+                
+                <div class="service-card">
+                    <div class="service-icon">
+                        <i class="fas fa-wifi"></i>
+                    </div>
+                    <h3>Data Bundles</h3>
+                    <p>Affordable internet packages</p>
+                </div>
+                
+                <div class="service-card">
+                    <div class="service-icon">
+                        <i class="fas fa-lightbulb"></i>
+                    </div>
+                    <h3>Bill Payments</h3>
+                    <p>Electricity, TV subscriptions</p>
+                </div>
+            </div>
+        </div>
+    </section>
+    <!-- ===== PASTE THIS RIGHT AFTER SERVICES SECTION ===== -->
+<section class="about-section" id="about">
+  <div class="container">
+    <h2>About LIGHTPLUG</h2>
+    <div class="about-grid">
+      <!-- Mission Card -->
+      <div class="about-card">
+        <div class="about-icon"><i class="fas fa-bullseye"></i></div>
+        <h3>Our Mission</h3>
+        <p>Instant, reliable VTU services with lightning speed.</p>
+      </div>
+      
+      <!-- Vision Card -->
+      <div class="about-card">
+        <div class="about-icon"><i class="fas fa-eye"></i></div>
+        <h3>Our Vision</h3>
+        <p>Africa's leading digital payment platform.</p>
+      </div>
+      
+      <!-- Values Card -->
+      <div class="about-card">
+        <div class="about-icon"><i class="fas fa-heart"></i></div>
+        <h3>Our Values</h3>
+        <ul class="values-list">
+          <li><i class="fas fa-check"></i> Speed</li>
+          <li><i class="fas fa-check"></i> Transparency</li>
+          <li><i class="fas fa-check"></i> Customer Focus</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-brand">
+                
+                    <p>Instant VTU services at lightning speed</p>
+                </div>
+                
+                <div class="footer-links">
+                    <h4>Quick Links</h4>
+                    <ul>
+                        <li><a href="/about">About Us</a></li>
+                        <li><a href="/services">Services</a></li>
+                        <li><a href="/contact">Contact</a></li>
+                        <li><a href="/faq">FAQ</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-contact">
+                    <h4>Contact Us</h4>
+                    <ul>
+                        <li><i class="fas fa-envelope"></i> support@lightplug.com</li>
+                        <li><i class="fas fa-phone"></i> +234 916 113 0663</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="footer-bottom">
+                <p>&copy; 2025 LIGHTPLUG. All rights reserved.</p>
+                <div class="social-links">
+                    <a href="#"><i class="fab fa-facebook"></i></a>
+                    <a href="#"><i class="fab fa-twitter"></i></a>
+                    <a href="#"><i class="fab fa-instagram"></i></a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+   <div class="mobile-menu-overlay">
+    <div class="close-btn">
+        <i class="fas fa-times"></i>
+    </div>
+    <ul>
+        <li><a href="#">Home</a></li> <!-- # for top of page -->
+        <li><a href="#services">Services</a></li>
+        <li><a href="#about">About</a></li>
+        <li><a href="#contact">Contact</a></li>
+        <li><a href="/login" class="mobile-login-btn">Login</a></li>
+        <li><a href="/register" class="mobile-register-btn">Register</a></li>
+    </ul>
+</div>
+<!-- Add this just before </body> -->
+<script>
+// Highlight active nav link on scroll
+window.addEventListener('scroll', function() {
+  const sections = {
+    services: document.getElementById('services'),
+    about: document.getElementById('about')
+  };
+  
+  Object.entries(sections).forEach(([key, section]) => {
+    const navLink = document.querySelector(`a[href="#${key}"]`);
+    const scrollPosition = window.scrollY + 100;
+    
+    if (scrollPosition >= section.offsetTop && 
+        scrollPosition < section.offsetTop + section.offsetHeight) {
+      navLink.classList.add('active');
+    } else {
+      navLink.classList.remove('active');
+    }
+  });
+});
+</script>
+    <script>
+        // Mobile menu toggle
+        const mobileBtn = document.querySelector('.mobile-menu-btn');
+        const overlay = document.querySelector('.mobile-menu-overlay');
+        const closeBtn = document.querySelector('.close-btn');
+        
+        mobileBtn.addEventListener('click', () => {
+            overlay.style.display = 'flex';
+        });
+        
+        closeBtn.addEventListener('click', () => {
+            overlay.style.display = 'none';
+        });
+    </script>
+<button id="backToTop" onclick="window.scrollTo({top:0,behavior:'smooth'})">
+  <i class="fas fa-arrow-up"></i>
+</button>
+<script>
+// Mobile menu smooth scrolling
+document.querySelectorAll('.mobile-menu-overlay a[href^="#"]').forEach(link => {
+    link.addEventListener('click', function(e) {
+        e.preventDefault();
+        
+        // Close mobile menu
+        document.querySelector('.mobile-menu-overlay').style.display = 'none';
+        
+        // Smooth scroll to section
+        const targetId = this.getAttribute('href');
+        if(targetId !== '#') {  // Skip if it's just #
+            document.querySelector(targetId).scrollIntoView({
+                behavior: 'smooth'
+            });
+        }
+    });
+});
+</script>
+</body>
+</html>

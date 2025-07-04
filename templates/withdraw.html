@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Withdraw Funds | LIGHTPLUG</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"> {# Changed to style.css for consistency #}
+    <link rel="stylesheet" href="{{ url_for('static', filename='transactions.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="transaction-container">
+        <!-- Header -->
+        <header class="transaction-header">
+            <a href="{{ url_for('dashboard') }}" class="back-button">
+                <i class="fas fa-chevron-left"></i>
+            </a>
+            <h1>Withdraw Funds</h1>
+            <div class="header-spacer"></div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="transaction-content">
+            <div class="card illustration-card">
+                <div class="illustration withdraw-illustration">
+                    <i class="fas fa-wallet"></i>
+                </div>
+                <p class="instruction-text">Transfer to your bank account</p>
+            </div>
+
+            <!-- ADDED id="transaction-form" to your form -->
+            <form id="transaction-form" class="transaction-form" method="POST" action="{{ url_for('withdraw') }}">
+                <div class="form-group">
+                    <label class="input-label">Amount (₦)</label>
+                    <div class="input-with-icon">
+                        <span class="currency-symbol">₦</span>
+                        <input type="number" name="amount" placeholder="0.00" min="1000" step="500" required>
+                    </div>
+                    <p class="hint-text">Minimum withdrawal: ₦1,000</p>
+                </div>
+
+                <div class="form-group">
+                    <label class="input-label">Bank Details</label>
+                    <div class="input-with-icon">
+                        <i class="fas fa-university"></i>
+                        <select name="bank_name" required>
+                            <option value="" disabled selected>Select your bank</option>
+                            <option value="GT Bank">GT Bank</option>
+                            <option value="Zenith Bank">Zenith Bank</option>
+                            <option value="Access Bank">Access Bank</option>
+                            <option value="First Bank">First Bank</option>
+                            <option value="United Bank for Africa">United Bank for Africa</option> {# Corrected option value #}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="input-label">Account Number</label>
+                    <div class="input-with-icon">
+                        <i class="fas fa-credit-card"></i>
+                        <input type="text" name="account_number" placeholder="1234567890" pattern="[0-9]{10}" required>
+                    </div>
+                </div>
+
+                <button type="submit" class="primary-button withdraw-button">
+                    <i class="fas fa-arrow-up"></i> Request Withdrawal
+                </button>
+            </form>
+        </main>
+    </div>
+
+    <!-- START OF PIN MODAL HTML - Place this right before </body> -->
+    <div id="pin-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h3>Enter Transaction PIN</h3>
+            <div class="pin-input">
+                <input type="password" class="pin-field" maxlength="1" pattern="\d" inputmode="numeric" autocomplete="off">
+                <input type="password" class="pin-field" maxlength="1" pattern="\d" inputmode="numeric" autocomplete="off">
+                <input type="password" class="pin-field" maxlength="1" pattern="\d" inputmode="numeric" autocomplete="off">
+                <input type="password" class="pin-field" maxlength="1" pattern="\d" inputmode="numeric" autocomplete="off">
+            </div>
+            <p class="error-message" id="pin-error"></p>
+            <button id="verify-pin-btn" class="auth-btn">Verify PIN</button>
+        </div>
+    </div>
+    <!-- END OF PIN MODAL HTML -->
+
+    <!-- START OF PIN MODAL JAVASCRIPT - Place this right before </body> -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const pinModal = document.getElementById('pin-modal');
+            const closePinModalBtn = pinModal.querySelector('.close-modal');
+            const pinInputs = pinModal.querySelectorAll('.pin-field');
+            const verifyPinBtn = document.getElementById('verify-pin-btn');
+            const pinError = document.getElementById('pin-error');
+            const transactionForm = document.getElementById('transaction-form'); // Your main form's ID
+
+            // Store original form action/method for potential re-submission
+            let originalFormAction = transactionForm.action;
+            let originalFormMethod = transactionForm.method;
+            let transactionData = {}; // To store the form data temporarily
+
+            // Functions for PIN modal interaction
+            function showPinModal(errorMessage = '') {
+                pinModal.style.display = 'block';
+                pinInputs.forEach(input => input.value = ''); // Clear inputs
+                pinInputs[0].focus(); // Focus on the first input
+                pinError.textContent = errorMessage; // Display any initial error
+            }
+
+            function closePinModal() {
+                pinModal.style.display = 'none';
+                pinInputs.forEach(input => input.value = '');
+                pinError.textContent = '';
+            }
+
+            function showPinError(message) {
+                pinError.textContent = message;
+                pinInputs.forEach(input => input.value = ''); // Clear inputs
+                pinInputs[0].focus(); // Re-focus
+                shakePinInputs(); // Add shake animation
+            }
+
+            function shakePinInputs() {
+                const pinContainer = pinModal.querySelector('.pin-input');
+                pinContainer.classList.add('shake');
+                setTimeout(() => {
+                    pinContainer.classList.remove('shake');
+                }, 500);
+            }
+
+            // Event Listeners for PIN fields
+            pinInputs.forEach((input, index) => {
+                input.addEventListener('input', (e) => {
+                    // Restrict input to single digit
+                    e.target.value = e.target.value.slice(0, 1);
+                    if (e.target.value.length === 1) {
+                        if (index < pinInputs.length - 1) {
+                            pinInputs[index + 1].focus();
+                        } else {
+                            verifyPinBtn.focus(); // Focus verify button if last field is filled
+                        }
+                    }
+                });
+
+                input.addEventListener('keydown', (e) => {
+                    if (e.key === 'Backspace' && e.target.value.length === 0 && index > 0) {
+                        pinInputs[index - 1].focus();
+                    }
+                    // Prevent non-numeric input (except Backspace, Tab, Arrow keys)
+                    if (!/^\d$/.test(e.key) && e.key.length === 1 &&
+                        e.key !== 'Backspace' && e.key !== 'Tab' &&
+                        e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') {
+                        e.preventDefault();
+                    }
+                });
+            });
+
+            // Verify PIN button click handler
+            verifyPinBtn.addEventListener('click', () => {
+                const enteredPin = Array.from(pinInputs).map(input => input.value).join('');
+
+                if (enteredPin.length !== 4) {
+                    showPinError('Please enter a complete 4-digit PIN.');
+                    return;
+                }
+
+                verifyPinBtn.disabled = true;
+                verifyPinBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verifying...'; // Add spinner
+
+                // AJAX call to your backend /verify_pin endpoint
+                fetch('/verify-pin', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json', // Send as JSON for easier parsing in Flask
+                    },
+                    body: JSON.stringify({ pin: enteredPin }) // Send PIN as JSON
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        closePinModal();
+                        // PIN is correct, now submit the actual transaction form
+                        // Reconstruct FormData including the verified PIN
+                        const finalFormData = new FormData();
+                        for (const key in transactionData) {
+                            finalFormData.append(key, transactionData[key]);
+                        }
+                        finalFormData.append('transaction_pin', enteredPin); // Add the verified PIN
+
+                        // Perform the actual transaction submission using fetch
+                        fetch(originalFormAction, {
+                            method: originalFormMethod,
+                            body: finalFormData // Use FormData directly
+                        })
+                        .then(response => response.json()) // Expect JSON response from Flask route
+                        .then(transactionResponse => {
+                            if (transactionResponse.success) {
+                                window.location.href = transactionResponse.redirect_url; // Redirect on success
+                            } else {
+                                // Display transaction specific error
+                                const mainErrorDiv = document.createElement('div');
+                                mainErrorDiv.className = 'flash-error flash-message'; // Assuming you have these classes
+                                mainErrorDiv.innerHTML = `<p>${transactionResponse.message}<span class="close-flash">&times;</span></p>`;
+                                document.querySelector('main').prepend(mainErrorDiv);
+                                setTimeout(() => mainErrorDiv.remove(), 5000); // Remove after 5 seconds
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Transaction submission error:', error);
+                            showPinError('An error occurred during transaction processing. Please try again.');
+                        });
+
+                    } else {
+                        showPinError(data.message || 'Incorrect PIN');
+                    }
+                })
+                .catch(error => {
+                    showPinError('Verification failed. Please try again.');
+                    console.error('Error:', error);
+                })
+                .finally(() => {
+                    verifyPinBtn.disabled = false;
+                    verifyPinBtn.textContent = 'Verify PIN';
+                });
+            });
+
+            // Close modal when X is clicked or outside is clicked
+            closePinModalBtn.addEventListener('click', closePinModal);
+            window.addEventListener('click', function(event) {
+                if (event.target === pinModal) {
+                    closePinModal();
+                }
+            });
+
+            // Modify the transaction form submission to first show PIN modal
+            if (transactionForm) {
+                transactionForm.addEventListener('submit', function(event) {
+                    event.preventDefault(); // Prevent default submission
+                    
+                    // Collect all form data before showing the modal
+                    const formData = new FormData(transactionForm);
+                    transactionData = {};
+                    for (let [key, value] of formData.entries()) {
+                        transactionData[key] = value;
+                    }
+
+                    showPinModal(); // Show the PIN modal
+                });
+            }
+        });
+    </script>
+    <!-- END OF PIN MODAL JAVASCRIPT -->
+<!-- Add this to the form -->
+<input type="hidden" name="recipient_code" id="recipient-code">
+<script>
+// Auto-validate bank details on input
+document.querySelector('input[name="account_number"]').addEventListener('blur', async function() {
+    const bankName = document.querySelector('select[name="bank_name"]').value;
+    const accountNumber = this.value;
+
+    const response = await fetch('/validate-bank-account', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bank_name: bankName, account_number: accountNumber })
+    });
+    const data = await response.json();
+
+    if (data.success) {
+        document.getElementById('recipient-code').value = data.recipient_code;
+    } else {
+        alert('Invalid bank details: ' + data.message);
+    }
+});
+</script>
+</body>
+</html>

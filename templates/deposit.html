@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deposit Funds | LIGHTPLUG</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='transactions.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="transaction-container">
+        <!-- Header -->
+        <header class="transaction-header">
+            <a href="{{ url_for('dashboard') }}" class="back-button">
+                <i class="fas fa-chevron-left"></i>
+            </a>
+            <h1>Deposit Funds</h1>
+            <div class="header-spacer"></div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="transaction-content">
+            <div class="card illustration-card">
+                <div class="illustration deposit-illustration">
+                    <i class="fas fa-coins"></i>
+                </div>
+                <p class="instruction-text">Add money to your LIGHTPLUG wallet</p>
+            </div>
+
+            <form id="transaction-form" class="transaction-form" method="POST" action="{{ url_for('deposit') }}">
+                <div class="form-group">
+                    <label class="input-label">Amount (₦)</label>
+                    <div class="input-with-icon">
+                        <span class="currency-symbol">₦</span>
+                        <input type="number" name="amount" placeholder="0.00" min="100" step="100" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="input-label">Deposit Method</label>
+                    <div class="method-option">
+                        <div class="method-icon">
+                            <i class="fas fa-university"></i>
+                        </div>
+                        <div class="method-details">
+                            <h4>Bank Transfer</h4>
+                            <p>Generate a dedicated account for instant deposits</p>
+                            
+                            <div id="virtual-account-info" style="display: none;">
+                                <div class="account-detail">
+                                    <span>Bank Name:</span>
+                                    <strong id="bank-name">-</strong>
+                                </div>
+                                <div class="account-detail">
+                                    <span>Account Number:</span>
+                                    <strong id="account-number">-</strong>
+                                </div>
+                                <div class="account-detail">
+                                    <span>Account Name:</span>
+                                    <strong id="account-name">-</strong>
+                                </div>
+                                <p class="hint-text">Transfer to this account and funds will reflect automatically</p>
+                            </div>
+                            
+                            <button type="button" id="generate-account-btn" class="primary-button">
+                                <i class="fas fa-plus-circle"></i> Generate Account
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <button type="submit" class="primary-button" style="margin-top: 20px;">
+                    <i class="fas fa-arrow-right"></i> Continue
+                </button>
+            </form>
+        </main>
+    </div>
+
+    <!-- PIN Modal -->
+    <div id="pin-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h3>Enter Transaction PIN</h3>
+            <p>Please enter your 4-digit PIN to confirm this transaction</p>
+            
+            <div class="pin-input">
+                <input type="password" class="pin-field" maxlength="1" inputmode="numeric" pattern="[0-9]*">
+                <input type="password" class="pin-field" maxlength="1" inputmode="numeric" pattern="[0-9]*">
+                <input type="password" class="pin-field" maxlength="1" inputmode="numeric" pattern="[0-9]*">
+                <input type="password" class="pin-field" maxlength="1" inputmode="numeric" pattern="[0-9]*">
+            </div>
+            
+            <p id="pin-error" class="error-message"></p>
+            <button id="verify-pin-btn" class="primary-button">Verify PIN</button>
+        </div>
+    </div>
+
+    <script src="https://js.paystack.co/v1/inline.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const pinModal = document.getElementById('pin-modal');
+            const closePinModalBtn = pinModal.querySelector('.close-modal');
+            const pinInputs = pinModal.querySelectorAll('.pin-field');
+            const verifyPinBtn = document.getElementById('verify-pin-btn');
+            const pinError = document.getElementById('pin-error');
+            const transactionForm = document.getElementById('transaction-form');
+            const generateAccountBtn = document.getElementById('generate-account-btn');
+            const virtualAccountInfo = document.getElementById('virtual-account-info');
+
+            // Check localStorage for existing virtual account
+            const savedAccount = localStorage.getItem('virtualAccount');
+            if (savedAccount) {
+                const account = JSON.parse(savedAccount);
+                document.getElementById('bank-name').textContent = account.bank;
+                document.getElementById('account-number').textContent = account.account_number;
+                document.getElementById('account-name').textContent = account.account_name;
+                virtualAccountInfo.style.display = 'block';
+                generateAccountBtn.innerHTML = '<i class="fas fa-check-circle"></i> Account Generated';
+                generateAccountBtn.style.backgroundColor = '#2ecc71';
+                generateAccountBtn.disabled = true;
+            }
+
+            // Generate virtual account
+            generateAccountBtn.addEventListener('click', async function() {
+                generateAccountBtn.disabled = true;
+                generateAccountBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...';
+
+                try {
+                    const response = await fetch('/generate-virtual-account', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' }
+                    });
+                    const data = await response.json();
+
+                    if (data.success) {
+                        // Display account details
+                        document.getElementById('bank-name').textContent = data.bank;
+                        document.getElementById('account-number').textContent = data.account_number;
+                        document.getElementById('account-name').textContent = data.account_name;
+                        virtualAccountInfo.style.display = 'block';
+                        
+                        // Change button to "Generated"
+                        generateAccountBtn.innerHTML = '<i class="fas fa-check-circle"></i> Account Generated';
+                        generateAccountBtn.style.backgroundColor = '#2ecc71';
+                        
+                        // Store in localStorage to remember the account
+                        localStorage.setItem('virtualAccount', JSON.stringify(data));
+                    } else {
+                        alert('Error: ' + (data.message || 'Failed to generate account'));
+                        generateAccountBtn.disabled = false;
+                        generateAccountBtn.innerHTML = '<i class="fas fa-plus-circle"></i> Generate Account';
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    alert('Network error - please try again');
+                    generateAccountBtn.disabled = false;
+                    generateAccountBtn.innerHTML = '<i class="fas fa-plus-circle"></i> Generate Account';
+                }
+            });
+
+            // Functions for PIN modal interaction
+            function showPinModal(errorMessage = '') {
+                pinModal.style.display = 'block';
+                pinInputs.forEach(input => input.value = '');
+                pinInputs[0].focus();
+                pinError.textContent = errorMessage;
+            }
+
+            function closePinModal() {
+                pinModal.style.display = 'none';
+                pinInputs.forEach(input => input.value = '');
+                pinError.textContent = '';
+            }
+
+            function showPinError(message) {
+                pinError.textContent = message;
+                pinInputs.forEach(input => input.value = '');
+                pinInputs[0].focus();
+            }
+
+            // Event Listeners for PIN fields
+            pinInputs.forEach((input, index) => {
+                input.addEventListener('input', (e) => {
+                    e.target.value = e.target.value.slice(0, 1);
+                    if (e.target.value.length === 1 && index < pinInputs.length - 1) {
+                        pinInputs[index + 1].focus();
+                    }
+                });
+
+                input.addEventListener('keydown', (e) => {
+                    if (e.key === 'Backspace' && e.target.value.length === 0 && index > 0) {
+                        pinInputs[index - 1].focus();
+                    }
+                });
+            });
+
+            // Verify PIN button click handler
+            verifyPinBtn.addEventListener('click', () => {
+                const enteredPin = Array.from(pinInputs).map(input => input.value).join('');
+
+                if (enteredPin.length !== 4) {
+                    showPinError('Please enter a complete 4-digit PIN.');
+                    return;
+                }
+
+                verifyPinBtn.disabled = true;
+                verifyPinBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verifying...';
+
+                fetch('/verify-pin', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ pin: enteredPin })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        closePinModal();
+                        // Submit the form
+                        transactionForm.submit();
+                    } else {
+                        showPinError(data.message || 'Incorrect PIN');
+                    }
+                })
+                .catch(error => {
+                    showPinError('Verification failed. Please try again.');
+                    console.error('Error:', error);
+                })
+                .finally(() => {
+                    verifyPinBtn.disabled = false;
+                    verifyPinBtn.textContent = 'Verify PIN';
+                });
+            });
+
+            // Close modal when X is clicked or outside is clicked
+            closePinModalBtn.addEventListener('click', closePinModal);
+            window.addEventListener('click', function(event) {
+                if (event.target === pinModal) {
+                    closePinModal();
+                }
+            });
+
+            // Show PIN modal when form is submitted
+            transactionForm.addEventListener('submit', function(event) {
+                event.preventDefault();
+                showPinModal();
+            });
+        });
+    </script>
+</body>
+</html>

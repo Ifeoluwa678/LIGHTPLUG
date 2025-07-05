@@ -1,36 +1,31 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
-import sqlite3
-from contextlib import closing
+import psycopg2
+from psycopg2 import pool
 from itsdangerous import URLSafeTimedSerializer
 from datetime import timedelta
 import json
 from pyngrok import ngrok
-
 import threading
 import requests
 from dotenv import load_dotenv
 import os
 
-
+# Initialize PostgreSQL connection pool
+postgresql_pool = None
 
 def start_ngrok():
-    # Set your auth token (optional but recommended)
-    ngrok.set_auth_token("YOUR_NGROK_AUTH_TOKEN")  # Get from https://dashboard.ngrok.com/auth
-    
-    # Start ngrok tunnel
+    ngrok.set_auth_token("2zQnShLrqinHKmckJnYqI5XEtMZ_4nRHF9nSXK1BLvfHxfC5F")
     public_url = ngrok.connect(5000).public_url
     print(f"\nPaystack Webhook URL: {public_url}/paystack-webhook")
     print("Note: This URL changes each time you restart ngrok\n")
 
-# Start ngrok in a background thread when running locally
 if os.environ.get('WERKZEUG_RUN_MAIN') == 'true' or os.environ.get('FLASK_ENV') != 'production':
     threading.Thread(target=start_ngrok).start()
 
 def expose_localhost():
     try:
-        # Use public URL service (no installation needed)
         res = requests.post("https://api.expose.sh/tunnels", json={
             "subdomain": "yourproject",
             "port": 5000
@@ -41,6 +36,26 @@ def expose_localhost():
 
 # Load environment variables
 load_dotenv()
+
+# Initialize database pool
+def init_db_pool():
+    global postgresql_pool
+    postgresql_pool = psycopg2.pool.SimpleConnectionPool(
+        minconn=1,
+        maxconn=10,
+        host=os.getenv('POSTGRES_HOST', ),
+        database=os.getenv('POSTGRES_DB'),
+        user=os.getenv('POSTGRES_USER', ),
+        password=os.getenv('POSTGRES_PASSWORD'),
+        port=os.getenv('POSTGRES_PORT')
+    )
+    
+
+def get_db_connection():
+    return postgresql_pool.getconn()
+
+def release_db_connection(conn):
+    postgresql_pool.putconn(conn)
 
 # ClubConnect API Configuration
 CLUBCONNECT_API_KEYS = {
@@ -54,8 +69,8 @@ CLUBCONNECT_API_KEYS = {
 CLUBCONNECT_BASE_URL = os.getenv('CLUBCONNECT_BASE_URL')
 
 # Paystack Configuration
-PAYSTACK_SECRET_KEY = os.getenv('PAYSTACK_SECRET_KEY')  # Add to .env
-PAYSTACK_PUBLIC_KEY = os.getenv('PAYSTACK_PUBLIC_KEY')  # Add to .env
+PAYSTACK_SECRET_KEY = os.getenv('PAYSTACK_SECRET_KEY')
+PAYSTACK_PUBLIC_KEY = os.getenv('PAYSTACK_PUBLIC_KEY')
 PAYSTACK_BASE_URL = "https://api.paystack.co"
 
 # Validate all API keys
@@ -77,129 +92,156 @@ CLUBCONNECT_ENDPOINTS = {
 app = Flask(__name__)
 app.secret_key = os.getenv('FLASK_SECRET_KEY', 'default-secret-key')
 
-# ==============================================================================
 # Database Initialization
-# ==============================================================================
-
-def get_db_notifications():
-    """Connects to the notifications database."""
-    return sqlite3.connect('notifications.db')
-
 def init_notifications_db():
     """Initializes the notifications table if it doesn't exist."""
-    with closing(get_db_notifications()) as db:
-        db.execute('''
-        CREATE TABLE IF NOT EXISTS notifications (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_email TEXT NOT NULL,
-            message TEXT NOT NULL,
-            is_read BOOLEAN DEFAULT 0,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-        ''')
-        db.commit()
-
-def get_db_users():
-    """Connects to the users database."""
-    return sqlite3.connect('users.db')
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute('''
+            CREATE TABLE IF NOT EXISTS notifications (
+                id SERIAL PRIMARY KEY,
+                user_email TEXT NOT NULL,
+                message TEXT NOT NULL,
+                is_read BOOLEAN DEFAULT FALSE,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+            ''')
+            conn.commit()
+    finally:
+        release_db_connection(conn)
 
 def init_users_db():
     """Initializes the users table if it doesn't exist."""
-    with closing(get_db_users()) as db:
-        db.execute('''
-        CREATE TABLE IF NOT EXISTS users (
-            email TEXT PRIMARY KEY,
-            fullname TEXT NOT NULL,
-            phone TEXT NOT NULL,
-            password_hash TEXT NOT NULL,
-            pin_hash TEXT,
-            balance REAL DEFAULT 0.00,
-            transactions TEXT,
-            initial_notifications_sent BOOLEAN DEFAULT 0
-        )
-        ''')
-        db.commit()
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute('''
+            CREATE TABLE IF NOT EXISTS users (
+                email TEXT PRIMARY KEY,
+                fullname TEXT NOT NULL,
+                phone TEXT NOT NULL,
+                password_hash TEXT NOT NULL,
+                pin_hash TEXT,
+                balance NUMERIC(12, 2) DEFAULT 0.00,
+                transactions TEXT,
+                initial_notifications_sent BOOLEAN DEFAULT FALSE,
+                virtual_account JSONB
+            )
+            ''')
+            conn.commit()
+    finally:
+        release_db_connection(conn)
 
 # Initialize databases
+init_db_pool()
 init_notifications_db()
 init_users_db()
 
-# ==============================================================================
 # Helper Functions
-# ==============================================================================
-
 def add_user_to_db(email, fullname, phone, password_hash, pin_hash, balance=0.00):
     """Adds a new user to the database."""
-    with closing(get_db_users()) as db:
-        try:
-            db.execute(
-                'INSERT INTO users (email, fullname, phone, password_hash, pin_hash, balance, transactions, initial_notifications_sent) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-                (email, fullname, phone, password_hash, pin_hash, balance, '[]', 0)
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute(
+                '''INSERT INTO users 
+                (email, fullname, phone, password_hash, pin_hash, balance, transactions, initial_notifications_sent) 
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)''',
+                (email, fullname, phone, password_hash, pin_hash, balance, '[]', False)
             )
-            db.commit()
+            conn.commit()
             return True
-        except sqlite3.IntegrityError:
-            return False
+    except psycopg2.IntegrityError:
+        return False
+    finally:
+        release_db_connection(conn)
 
 def get_user_from_db(email):
     """Retrieves user data from the database."""
-    with closing(get_db_users()) as db:
-        cursor = db.execute('SELECT * FROM users WHERE email = ?', (email,))
-        user_row = cursor.fetchone()
-        if user_row:
-            return {
-                "email": user_row[0],
-                "fullname": user_row[1],
-                "phone": user_row[2],
-                "password": user_row[3],
-                "pin_hash": user_row[4],
-                "balance": user_row[5],
-                "transactions": json.loads(user_row[6]) if user_row[6] else [],
-                "initial_notifications_sent": bool(user_row[7])
-            }
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute('SELECT * FROM users WHERE email = %s', (email,))
+            user_row = cursor.fetchone()
+            if user_row:
+                return {
+                    "email": user_row[0],
+                    "fullname": user_row[1],
+                    "phone": user_row[2],
+                    "password": user_row[3],
+                    "pin_hash": user_row[4],
+                    "balance": float(user_row[5]) if user_row[5] else 0.00,
+                    "transactions": json.loads(user_row[6]) if user_row[6] else [],
+                    "initial_notifications_sent": user_row[7],
+                    "virtual_account": user_row[8] if user_row[8] else None
+                }
         return None
+    finally:
+        release_db_connection(conn)
 
 def update_user_in_db(user_data):
     """Updates user data in the database."""
-    with closing(get_db_users()) as db:
-        db.execute(
-            'UPDATE users SET fullname=?, phone=?, password_hash=?, pin_hash=?, balance=?, transactions=?, initial_notifications_sent=? WHERE email=?',
-            (user_data['fullname'], user_data['phone'], user_data['password'],
-             user_data['pin_hash'], user_data['balance'],
-             json.dumps(user_data['transactions']), int(user_data['initial_notifications_sent']),
-             user_data['email'])
-        )
-        db.commit()
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute(
+                '''UPDATE users SET 
+                fullname=%s, phone=%s, password_hash=%s, pin_hash=%s, 
+                balance=%s, transactions=%s, initial_notifications_sent=%s, virtual_account=%s
+                WHERE email=%s''',
+                (user_data['fullname'], user_data['phone'], user_data['password'],
+                 user_data['pin_hash'], user_data['balance'],
+                 json.dumps(user_data['transactions']), 
+                 user_data['initial_notifications_sent'],
+                 json.dumps(user_data.get('virtual_account')) if user_data.get('virtual_account') else None,
+                 user_data['email'])
+            )
+            conn.commit()
+    finally:
+        release_db_connection(conn)
 
 def add_notification(email, message):
     """Adds a notification for the user."""
-    with closing(get_db_notifications()) as db:
-        db.execute(
-            'INSERT INTO notifications (user_email, message) VALUES (?, ?)',
-            (email, message)
-        )
-        db.commit()
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute(
+                'INSERT INTO notifications (user_email, message) VALUES (%s, %s)',
+                (email, message)
+            )
+            conn.commit()
+    finally:
+        release_db_connection(conn)
 
 def get_user_notifications(email):
     """Gets all notifications for a user."""
-    with closing(get_db_notifications()) as db:
-        cursor = db.execute('''
-            SELECT message, strftime('%H:%M', created_at) as time, is_read
-            FROM notifications
-            WHERE user_email = ?
-            ORDER BY created_at DESC
-            LIMIT 50
-        ''', (email,))
-        return cursor.fetchall()
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute('''
+                SELECT message, TO_CHAR(created_at, 'HH24:MI') as time, is_read
+                FROM notifications
+                WHERE user_email = %s
+                ORDER BY created_at DESC
+                LIMIT 50
+            ''', (email,))
+            return cursor.fetchall()
+    finally:
+        release_db_connection(conn)
 
 def clear_notifications(email):
     """Clears all notifications for a user."""
-    with closing(get_db_notifications()) as db:
-        db.execute(
-            'DELETE FROM notifications WHERE user_email = ?',
-            (email,)
-        )
-        db.commit()
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute(
+                'DELETE FROM notifications WHERE user_email = %s',
+                (email,)
+            )
+            conn.commit()
+    finally:
+        release_db_connection(conn)
 
 def generate_token(email):
     """Generates a password reset token."""
@@ -219,10 +261,7 @@ def verify_token(token, expiration=3600):
     except:
         return False
 
-# ==============================================================================
 # ClubConnect API Functions
-# ==============================================================================
-
 def call_clubconnect_api(service_type, endpoint, data):
     """Make authenticated requests to ClubConnect API with service-specific keys"""
     headers = {
@@ -1298,5 +1337,6 @@ def inject_balance():
 # ==============================================================================
 
 if __name__ == "__main__":
+    init_db_pool()
     threading.Thread(target=expose_localhost).start()
     app.run(debug=True, port=5000)

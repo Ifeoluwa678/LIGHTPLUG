@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='admin.css') }}">
+</head>
+<body>
+    <h1>Admin Dashboard</h1>
+    <div style="text-align: center; margin-bottom: 20px;">
+        <a href="/admin/transactions"><button>📄 View Transactions</button></a>
+        <a href="/admin/commission"><button>💰 View Commission</button></a>
+        <a href="/admin/user-activity"><button>🧾 User Logs</button></a>
+    </div>
+    <table>
+        <thead>
+            <tr>
+                <th>Email</th>
+                <th>Full Name</th>
+                <th>Phone</th>
+                <th>Wallet Balance</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for user in users %}
+            <tr>
+                <td>{{ user.email }}</td>
+                <td>{{ user.fullname }}</td>
+                <td>{{ user.phone }}</td>
+                <td>₦{{ user.balance }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <a href="/admin-logout" class="logout-btn">Logout</a>
+</body>
+</html>

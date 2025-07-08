@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>All Transactions</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='admin.css') }}">
+</head>
+<body>
+    <h1>All User Transactions</h1>
+    <table>
+        <tr>
+            <th>Email</th>
+            <th>Type</th>
+            <th>Network</th>
+            <th>Amount</th>
+            <th>Status</th>
+            <th>Timestamp</th>
+        </tr>
+        {% for txn in txns %}
+        <tr>
+            <td>{{ txn[0] }}</td>
+            <td>{{ txn[1] }}</td>
+            <td>{{ txn[2] }}</td>
+            <td>₦{{ txn[3] }}</td>
+            <td>{{ txn[4] }}</td>
+            <td>{{ txn[5] }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+    <a href="/admin" class="logout-btn">Back to Dashboard</a>
+</body>
+</html>

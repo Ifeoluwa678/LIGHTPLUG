@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin Commission</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='admin.css') }}">
+</head>
+<body>
+    <h1>LIGHTPLUG Commission Summary</h1>
+    <table>
+        <tr><th>Total Commission Earned</th><td>₦{{ data[0] }}</td></tr>
+        <tr><th>Last Withdraw Date</th><td>{{ data[1] }}</td></tr>
+        <tr><th>Current Balance</th><td>₦{{ data[2] }}</td></tr>
+    </table>
+
+    <form method="POST">
+        <button type="submit">Withdraw Commission</button>
+    </form>
+
+    <a href="/admin" class="logout-btn">Back to Dashboard</a>
+</body>
+</html>

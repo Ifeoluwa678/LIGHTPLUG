@@ -688,12 +688,12 @@ def buy_data():
         phone = request.form.get('phone', user['phone'])
         network = request.form.get('network')
         plan_id = request.form.get('plan_id')
-        
+
         selected_plan = next(
             (p for provider in data_plans.values() for p in provider if p['id'] == plan_id),
             None
         )
-        
+
         if not selected_plan:
             return jsonify({'success': False, 'message': 'Invalid data plan selected'})
 
@@ -722,12 +722,50 @@ def buy_data():
             }
             user['transactions'].append(transaction)
             update_user_in_db(user)
-            
+
+            # ✅ Admin tracking (commission + logs + save)
+            try:
+                conn = postgresql_pool.getconn()
+                cur = conn.cursor()
+
+                user_email = user['email']
+                amount = selected_plan['price']
+                service_type = "data"
+                commission = int(amount * 0.05)
+                status = 'success'
+
+                # 1. Save transaction for admin
+                cur.execute("""
+                    INSERT INTO transactions (user_email, type, network, amount, status)
+                    VALUES (%s, %s, %s, %s, %s)
+                """, (user_email, service_type, network, amount, status))
+
+                # 2. Update admin commission
+                cur.execute("""
+                    UPDATE admin_commission
+                    SET total_commission = total_commission + %s,
+                        balance = balance + %s
+                """, (commission, commission))
+
+                # 3. Log user activity
+                activity = f"purchased {network} {selected_plan['name']} data for ₦{amount}"
+                cur.execute("""
+                    INSERT INTO user_logs (user_email, activity)
+                    VALUES (%s, %s)
+                """, (user_email, activity))
+
+                conn.commit()
+            except Exception as e:
+                print("Admin tracking error:", e)
+            finally:
+                postgresql_pool.putconn(conn)
+
             return jsonify({
                 'success': True,
                 'message': 'Data purchase successful!',
                 'transaction_id': transaction['transaction_id']
             })
+
         else:
             return jsonify({
                 'success': False,
@@ -735,6 +773,7 @@ def buy_data():
             })
 
     return render_template('buy_data.html', user=user, data_plans=data_plans, balance=user['balance'])
+
 
 @app.route('/tv-payment', methods=['GET', 'POST'])
 def tv_payment():
@@ -1196,6 +1235,9 @@ def generate_virtual_account():
             headers=headers,
             json=payload
         )
+         # ✅ Add these lines to see real error:
+        print("Status Code:", response.status_code)
+        print("Response Body:", response.text)
         data = response.json()
 
         if data.get('status'):
@@ -1317,6 +1359,143 @@ def verify_webhook_signature(payload, signature, secret):
     ).hexdigest()
     return hmac.compare_digest(computed_signature, signature)
 
+@app.route('/admin-welcome')
+def admin_welcome():
+    return render_template('admin_welcome.html')
+
+
+@app.route('/admin')
+def admin_dashboard():
+    print("Is admin?", session.get("is_admin"))
+    if not session.get('is_admin'):
+        return redirect('/admin-login')
+
+    users = get_all_users_from_db()
+    return render_template('admin.html', users=users)
+
+
+
+@app.route('/admin-login', methods=['GET', 'POST'])
+def admin_login():
+    if request.method == 'POST':
+        email = request.form['email']
+        password = request.form['password']
+
+        if email == 'ajibadegideon2022@gmail.com' and password == '09161130663Gi':
+            session['is_admin'] = True
+            return redirect('/admin')
+        else:
+            return "Invalid admin credentials"
+
+    return render_template('admin_login.html')
+
+
+
+def get_all_users_from_db():
+    conn = postgresql_pool.getconn()
+    try:
+        cur = conn.cursor()
+        cur.execute("SELECT email, fullname, phone, balance FROM users")
+        rows = cur.fetchall()
+        users = []
+        for row in rows:
+            users.append({
+                'email': row[0],
+                'fullname': row[1],
+                'phone': row[2],
+                'balance': row[3]
+            })
+        return users
+    finally:
+        postgresql_pool.putconn(conn)
+
+@app.route('/admin/transactions')
+def admin_transactions():
+    if not session.get('is_admin'):
+        return redirect('/admin-login')
+
+    conn = postgresql_pool.getconn()
+    try:
+        cur = conn.cursor()
+        cur.execute("SELECT user_email, type, network, amount, status, timestamp FROM transactions ORDER BY timestamp DESC")
+        txns = cur.fetchall()
+    finally:
+        postgresql_pool.putconn(conn)
+
+    return render_template("admin_transactions.html", txns=txns)
+
+@app.route('/admin/commission', methods=['GET', 'POST'])
+def admin_commission():
+    if not session.get('is_admin'):
+        return redirect('/admin-login')
+
+    conn = postgresql_pool.getconn()
+    try:
+        cur = conn.cursor()
+
+        if request.method == 'POST':
+            # 🔐 Fixed withdrawal account (no form input)
+            admin_bank = "opay"
+            admin_account_number = "9161130663"
+            amount_to_withdraw = 0
+
+            # Get current balance
+            cur.execute("SELECT balance FROM admin_commission")
+            result = cur.fetchone()
+            if result:
+                amount_to_withdraw = result[0]
+
+            if amount_to_withdraw > 0:
+                # Call your withdrawal API here (e.g., Paystack Transfer or mock)
+                # For now, just reset balance
+                cur.execute("""
+                    UPDATE admin_commission
+                    SET balance = 0
+                """)
+
+                # Log the withdrawal
+                cur.execute("""
+                    INSERT INTO user_logs (user_email, activity)
+                    VALUES (%s, %s)
+                """, ('ADMIN', f"withdrew ₦{amount_to_withdraw} to {admin_bank} ({admin_account_number})"))
+
+                conn.commit()
+                flash(f"₦{amount_to_withdraw} withdrawn to {admin_bank} ({admin_account_number})", 'success')
+            else:
+                flash("No balance to withdraw.", 'error')
+
+        # GET view: show current commission
+        cur.execute("SELECT total_commission, balance FROM admin_commission")
+        row = cur.fetchone()
+        total_commission = row[0] if row else 0
+        balance = row[1] if row else 0
+
+    finally:
+        postgresql_pool.putconn(conn)
+
+    return render_template("admin_commission.html", total_commission=total_commission, balance=balance)
+
+@app.route('/admin/user-activity')
+def admin_logs():
+    if not session.get('is_admin'):
+        return redirect('/admin-login')
+
+    conn = postgresql_pool.getconn()
+    try:
+        cur = conn.cursor()
+        cur.execute("SELECT user_email, activity, timestamp FROM user_logs ORDER BY timestamp DESC")
+        logs = cur.fetchall()
+    finally:
+        postgresql_pool.putconn(conn)
+
+    return render_template("admin_logs.html", logs=logs)
+
+
+
+@app.route('/admin-logout')
+def admin_logout():
+    session.pop('is_admin', None)
+    return redirect('/admin-welcome')
 
 
 @app.route('/routes')

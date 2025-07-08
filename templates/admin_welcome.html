@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Welcome Admin</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='admin.css') }}">
+</head>
+<body>
+    <h1>Welcome to LIGHTPLUG Admin Panel</h1>
+    <p style="text-align: center;">Only authorized admin can log in.</p>
+    <div style="text-align: center;">
+        <a href="/admin-login"><button>Login as Admin</button></a>
+    </div>
+</body>
+</html>

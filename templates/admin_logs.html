@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>User Activity Logs</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='admin.css') }}">
+</head>
+<body>
+    <h1>User Activity Log</h1>
+    <table>
+        <tr>
+            <th>Email</th>
+            <th>Activity</th>
+            <th>Time</th>
+        </tr>
+        {% for log in logs %}
+        <tr>
+            <td>{{ log[0] }}</td>
+            <td>{{ log[1] }}</td>
+            <td>{{ log[2] }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+    <a href="/admin" class="logout-btn">Back to Dashboard</a>
+</body>
+</html>
